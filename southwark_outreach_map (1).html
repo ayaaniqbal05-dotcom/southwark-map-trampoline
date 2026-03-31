@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SPF Southwark — Outreach Map</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+<style>
+/* ─── RESET & TOKENS ─────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --navy:     #0f2244;
+  --navy2:    #1a3560;
+  --blue:     #1e5fcc;
+  --blue2:    #2e75e8;
+  --lblue:    #c8daf5;
+  --vlblue:   #eaf1fd;
+  --teal:     #0d8a74;
+  --amber:    #d97706;
+  --red:      #dc2626;
+  --green:    #16a34a;
+  --white:    #ffffff;
+  --off:      #f7f8fc;
+  --border:   #e2e7f0;
+  --text:     #1e293b;
+  --muted:    #64748b;
+  --light:    #94a3b8;
+
+  --sidebar:  380px;
+  --topbar:   58px;
+  --radius:   10px;
+  --shadow:   0 4px 24px rgba(15,34,68,.12);
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--navy);
+  color: var(--text);
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── TOPBAR ─────────────────────────────────────────────────────── */
+#topbar {
+  height: var(--topbar);
+  background: var(--navy);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 14px;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  z-index: 1000;
+}
+
+.logo-mark {
+  width: 36px; height: 36px;
+  background: var(--blue);
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.topbar-title {
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -.2px;
+}
+
+.topbar-sub {
+  color: var(--lblue);
+  font-size: 11.5px;
+  font-weight: 400;
+  opacity: .8;
+}
+
+.topbar-pill {
+  margin-left: auto;
+  background: rgba(255,255,255,.1);
+  color: var(--lblue);
+  padding: 5px 13px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'DM Mono', monospace;
+  flex-shrink: 0;
+}
+
+.topbar-refresh {
+  background: none;
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 8px;
+  color: var(--lblue);
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: all .15s;
+  flex-shrink: 0;
+}
+.topbar-refresh:hover { background: rgba(255,255,255,.08); color: #fff; }
+
+/* ─── LAYOUT ─────────────────────────────────────────────────────── */
+#main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ─── SIDEBAR ────────────────────────────────────────────────────── */
+#sidebar {
+  width: var(--sidebar);
+  background: var(--white);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  position: relative;
+  z-index: 10;
+}
+
+/* Search */
+#sidebar-head {
+  padding: 14px 14px 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--off);
+  flex-shrink: 0;
+}
+
+.search-wrap {
+  position: relative;
+}
+
+#searchInput {
+  width: 100%;
+  padding: 10px 36px 10px 38px;
+  border: 1.5px solid var(--border);
+  border-radius: 9px;
+  font-size: 13.5px;
+  font-family: 'DM Sans', sans-serif;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+  background: #fff;
+  color: var(--text);
+}
+#searchInput::placeholder { color: var(--light); }
+#searchInput:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(30,95,204,.12);
+}
+
+.search-ico {
+  position: absolute; left: 12px; top: 50%;
+  transform: translateY(-50%);
+  color: var(--light); font-size: 15px; pointer-events: none;
+}
+
+#searchClear {
+  position: absolute; right: 10px; top: 50%;
+  transform: translateY(-50%);
+  background: var(--border); border: none; cursor: pointer;
+  color: var(--muted); font-size: 13px;
+  width: 20px; height: 20px; border-radius: 50%;
+  display: none; align-items: center; justify-content: center;
+  line-height: 1; transition: background .15s;
+}
+#searchClear:hover { background: var(--lblue); }
+
+/* Area tabs */
+#areaTabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 10px 0 12px;
+}
+
+.atab {
+  padding: 4px 11px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1.5px solid var(--border);
+  background: #fff;
+  color: var(--muted);
+  transition: all .12s;
+  white-space: nowrap;
+}
+.atab:hover { border-color: var(--blue); color: var(--blue); }
+.atab.active { background: var(--navy); border-color: var(--navy); color: #fff; }
+
+/* List header */
+#listHead {
+  padding: 9px 14px 7px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .7px;
+  color: var(--muted);
+  background: var(--off);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+/* Org list */
+#orgList {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+  scroll-behavior: smooth;
+}
+#orgList::-webkit-scrollbar { width: 3px; }
+#orgList::-webkit-scrollbar-track { background: transparent; }
+#orgList::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* Org card */
+.ocard {
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 11px 12px;
+  margin-bottom: 7px;
+  cursor: pointer;
+  transition: box-shadow .15s, border-color .15s, transform .1s;
+  border-left: 4px solid var(--blue);
+  background: #fff;
+  animation: fadeUp .2s ease both;
+}
+.ocard:hover {
+  box-shadow: var(--shadow);
+  border-left-color: var(--navy);
+  transform: translateX(2px);
+}
+.ocard.open { border-left-color: var(--navy); background: var(--vlblue); }
+
+@keyframes fadeUp {
+  from { opacity:0; transform: translateY(6px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+
+.ocard-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.ocard-name {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--navy);
+  line-height: 1.35;
+  flex: 1;
+}
+
+.type-tag {
+  background: var(--vlblue);
+  color: var(--blue);
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ocard-area {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 3px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Expanded details */
+.ocard-body {
+  display: none;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1.5px solid var(--border);
+}
+.ocard.open .ocard-body { display: block; }
+
+.detail-row {
+  display: flex;
+  gap: 9px;
+  margin-bottom: 7px;
+  font-size: 12.5px;
+  align-items: flex-start;
+  line-height: 1.45;
+}
+.d-ico { flex-shrink: 0; width: 16px; margin-top: 1px; opacity: .7; }
+.d-val { color: var(--text); flex: 1; word-break: break-word; }
+.d-val a { color: var(--blue); text-decoration: none; }
+.d-val a:hover { text-decoration: underline; }
+
+.sbadge {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 20px;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+}
+.s-contacted  { background: #dcfce7; color: #15803d; }
+.s-visited    { background: #dbeafe; color: #1d4ed8; }
+.s-partnership{ background: #fef9c3; color: #92400e; }
+.s-pending    { background: #fef9c3; color: #92400e; }
+.s-none       { background: #fee2e2; color: #b91c1c; }
+
+.notes-block {
+  background: #fffbeb;
+  border-left: 3px solid #fbbf24;
+  padding: 7px 9px;
+  border-radius: 0 7px 7px 0;
+  font-size: 11.5px;
+  color: #78350f;
+  margin-top: 8px;
+  line-height: 1.5;
+}
+
+/* Empty state */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 50px 20px;
+  gap: 8px;
+  color: var(--light);
+  text-align: center;
+}
+.empty-ico { font-size: 36px; }
+.empty-msg { font-size: 14px; font-weight: 600; }
+.empty-sub { font-size: 12px; }
+
+/* ─── MAP ────────────────────────────────────────────────────────── */
+#map {
+  flex: 1;
+  z-index: 0;
+}
+
+/* Custom map elements */
+.area-chip {
+  background: var(--navy);
+  color: #fff;
+  padding: 5px 11px;
+  border-radius: 20px;
+  font-size: 10.5px;
+  font-weight: 700;
+  font-family: 'DM Sans', sans-serif;
+  white-space: nowrap;
+  box-shadow: 0 2px 10px rgba(15,34,68,.35);
+  pointer-events: none;
+  letter-spacing: -.1px;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 12px !important;
+  box-shadow: var(--shadow) !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+.leaflet-popup-content {
+  margin: 0 !important;
+}
+.popup-inner {
+  padding: 14px 16px;
+  min-width: 170px;
+}
+.popup-area { font-weight: 700; color: var(--navy); font-size: 13.5px; }
+.popup-count { color: var(--blue); font-size: 12px; margin-top: 2px; }
+.popup-hint { font-size: 11px; color: var(--muted); margin-top: 6px; }
+.leaflet-popup-tip-container { display: none; }
+
+/* ─── LOADING ────────────────────────────────────────────────────── */
+#loader {
+  position: fixed; inset: 0;
+  background: var(--navy);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  z-index: 9999; gap: 16px;
+  transition: opacity .4s;
+}
+.loader-icon { font-size: 52px; animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+.loader-title { color: #fff; font-size: 19px; font-weight: 700; }
+.loader-sub { color: var(--lblue); font-size: 13px; opacity: .8; }
+.spinner {
+  width: 36px; height: 36px;
+  border: 3px solid rgba(255,255,255,.15);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .75s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── BANNER ────────────────────────────────────────────────────── */
+#banner {
+  background: #fef3c7;
+  color: #92400e;
+  padding: 10px 16px;
+  font-size: 12.5px;
+  border-bottom: 1px solid #fcd34d;
+  display: none;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ─── MOBILE ─────────────────────────────────────────────────────── */
+@media (max-width: 760px) {
+  :root { --sidebar: 100%; }
+
+  #main { flex-direction: column; }
+
+  #sidebar {
+    width: 100%;
+    height: 50vh;
+    order: 2;
+    border-right: none;
+    border-top: 2px solid var(--border);
+  }
+
+  #map { height: 50vh; order: 1; }
+
+  .topbar-sub { display: none; }
+  .topbar-refresh { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── LOADER ─────────────────────────────────────────────────────── -->
+<div id="loader">
+  <div class="loader-icon">🗺️</div>
+  <div class="loader-title">SPF Southwark Outreach Map</div>
+  <div class="spinner"></div>
+  <div class="loader-sub" id="loaderSub">Connecting to database…</div>
+</div>
+
+<!-- ── TOP BAR ────────────────────────────────────────────────────── -->
+<div id="topbar">
+  <div class="logo-mark">🗺️</div>
+  <div>
+    <div class="topbar-title">SPF Southwark — Outreach Map</div>
+    <div class="topbar-sub">Southwark Programme Fund · Live Database</div>
+  </div>
+  <div class="topbar-pill" id="topPill">Loading…</div>
+  <button class="topbar-refresh" onclick="refreshData()" title="Refresh data from Google Sheets">⟳ Refresh</button>
+</div>
+
+<!-- ── WARNING BANNER ─────────────────────────────────────────────── -->
+<div id="banner">
+  ⚠️ <strong>Sheet URL not configured.</strong> Showing demo data.
+  Open <code>index.html</code> and set <code>SHEET_URL</code> at the top of the script.
+</div>
+
+<!-- ── MAIN ───────────────────────────────────────────────────────── -->
+<div id="main">
+
+  <!-- Sidebar -->
+  <div id="sidebar">
+    <div id="sidebar-head">
+      <div class="search-wrap">
+        <span class="search-ico">🔍</span>
+        <input id="searchInput" type="text" placeholder="Search organisations, types, addresses…"/>
+        <button id="searchClear">✕</button>
+      </div>
+      <div id="areaTabs"></div>
+    </div>
+    <div id="listHead">All organisations</div>
+    <div id="orgList"></div>
+  </div>
+
+  <!-- Map -->
+  <div id="map"></div>
+</div>
+
+<!-- ── SCRIPTS ─────────────────────────────────────────────────────── -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════
+   ★  CONFIGURATION  ★
+   Paste your Google Sheet CSV export URL below.
+   To get this URL:
+     1. Open your Google Sheet
+     2. File → Share → Publish to web
+     3. Choose "Comma-separated values (.csv)"
+     4. Click Publish and copy the link
+   ═══════════════════════════════════════════════════════════════════ */
+const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT-Qv_0-NxO98TkGqzPeVrqeMj0FF6bQ9KMjSffk-tdnU4quqHG1I2kKIMVJ-E0QnXY8rYff5iy4fhX/pub?gid=0&single=true&output=csv';
+
+/* ═══════════════════════════════════════════════════════════════════
+   AREA CONFIG
+   ═══════════════════════════════════════════════════════════════════ */
+const AREA_ORDER = [
+  'Southwark-Wide',
+  'Borough & Bankside',
+  'Elephant & Castle',
+  'Bermondsey',
+  'Old Kent Road',
+  'Camberwell',
+  'Peckham',
+  'Rotherhithe & Surrey Quays',
+  'Unspecified',
+  'Outside Southwark',
+];
+
+const AREA_COLORS = {
+  'Southwark-Wide':            '#1e4fcc',
+  'Borough & Bankside':        '#0f4c8a',
+  'Elephant & Castle':         '#5b2d8e',
+  'Bermondsey':                '#0e6e8c',
+  'Old Kent Road':             '#1d7a3a',
+  'Camberwell':                '#7b3b0d',
+  'Peckham':                   '#9c3700',
+  'Rotherhithe & Surrey Quays':'#0d6e55',
+  'Unspecified':               '#64748b',
+  'Outside Southwark':         '#94a3b8',
+};
+
+const AREA_CENTROIDS = {
+  'Southwark-Wide':            [51.488, -0.082],
+  'Borough & Bankside':        [51.505, -0.095],
+  'Elephant & Castle':         [51.494, -0.101],
+  'Bermondsey':                [51.497, -0.062],
+  'Old Kent Road':             [51.484, -0.072],
+  'Camberwell':                [51.473, -0.089],
+  'Peckham':                   [51.474, -0.069],
+  'Rotherhithe & Surrey Quays':[51.499, -0.047],
+};
+
+/* Southwark wards → normalised area */
+const WARD_TO_AREA = {
+  'Bankside & Borough':'Borough & Bankside', 'Cathedrals':'Borough & Bankside',
+  'Riverside':'Borough & Bankside',
+  'Chaucer':'Elephant & Castle', 'Newington':'Elephant & Castle',
+  'Walworth':'Elephant & Castle', 'Faraday':'Elephant & Castle',
+  'Bermondsey':'Bermondsey', 'Grange':'Bermondsey', 'South Bermondsey':'Bermondsey',
+  'Old Kent Road':'Old Kent Road', 'Livesey':'Old Kent Road', 'The Lane':'Old Kent Road',
+  'Camberwell Green':'Camberwell', 'Champion Hill':'Camberwell',
+  'Dulwich Hill':'Camberwell', 'East Dulwich':'Camberwell',
+  'Herne Hill':'Camberwell', 'Village':'Camberwell',
+  'Peckham':'Peckham', 'Peckham Rye':'Peckham',
+  'Nunhead & Queens Road':'Peckham',
+  'Rotherhithe':'Rotherhithe & Surrey Quays',
+  'Surrey Docks':'Rotherhithe & Surrey Quays',
+  'Canada Water':'Rotherhithe & Surrey Quays',
+};
+
+/* ═══════════════════════════════════════════════════════════════════
+   STATE
+   ═══════════════════════════════════════════════════════════════════ */
+let allOrgs = [], filteredOrgs = [];
+let selectedArea = null, searchQuery = '', openCardId = null;
+let map, areaLayers = {}, chipMarkers = [];
+
+/* ═══════════════════════════════════════════════════════════════════
+   BOOT
+   ═══════════════════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+  initMap();
+  loadData();
+  setupSearch();
+});
+
+/* ═══════════════════════════════════════════════════════════════════
+   MAP INIT
+   ═══════════════════════════════════════════════════════════════════ */
+function initMap() {
+  map = L.map('map', { center:[51.488,-0.082], zoom:13, zoomControl:true });
+
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution:'© OpenStreetMap contributors © CARTO',
+    maxZoom: 19,
+  }).addTo(map);
+
+  /* Try loading real Southwark ward boundaries from ONS */
+  const onsUrl =
+    'https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/' +
+    'WD_MAY_2024_UK_BGC/FeatureServer/0/query' +
+    '?where=LAD24NM%3D%27Southwark%27&outFields=WD24NM&outSR=4326&f=geojson&resultRecordCount=100';
+
+  fetch(onsUrl)
+    .then(r => r.json())
+    .then(data => {
+      if (data.features && data.features.length > 0) {
+        renderWardGeoJSON(data);
+      } else {
+        renderFallbackCircles();
+      }
+    })
+    .catch(() => renderFallbackCircles());
+}
+
+function renderWardGeoJSON(geojson) {
+  /* Group wards by area */
+  const byArea = {};
+  geojson.features.forEach(f => {
+    const ward = (f.properties.WD24NM || '').trim();
+    const area = WARD_TO_AREA[ward] || 'Unspecified';
+    if (!byArea[area]) byArea[area] = [];
+    byArea[area].push(f);
+  });
+
+  Object.entries(byArea).forEach(([area, features]) => {
+    const color = AREA_COLORS[area] || '#666';
+    const layer = L.geoJSON({ type:'FeatureCollection', features }, {
+      style: () => ({
+        fillColor: color, fillOpacity: 0.22,
+        color: color, weight: 2, opacity: 0.7,
+      }),
+      onEachFeature(_, lyr) {
+        lyr.on({
+          mouseover(e) {
+            e.target.setStyle({ fillOpacity: 0.42, weight: 2.5 });
+            e.target.openPopup();
+          },
+          mouseout(e) {
+            if (selectedArea !== area) {
+              e.target.setStyle({ fillOpacity: 0.22, weight: 2 });
+            }
+            e.target.closePopup();
+          },
+          click() { selectArea(area); },
+        });
+
+        const count = allOrgs.filter(o => o.area === area).length;
+        lyr.bindPopup(`
+          <div class="popup-inner">
+            <div class="popup-area">${area}</div>
+            <div class="popup-count">${count} organisation${count !== 1 ? 's' : ''}</div>
+            <div class="popup-hint">Click to view list →</div>
+          </div>`, { closeButton: false, autoPan: false });
+      }
+    }).addTo(map);
+
+    areaLayers[area] = layer;
+  });
+
+  placeAreaChips();
+}
+
+function renderFallbackCircles() {
+  /* Fallback: simple circle markers if ONS API fails */
+  Object.entries(AREA_CENTROIDS).forEach(([area, latlng]) => {
+    const color = AREA_COLORS[area] || '#666';
+    const count = allOrgs.filter(o => o.area === area).length;
+    if (count === 0) return;
+
+    const circle = L.circleMarker(latlng, {
+      radius: 18 + Math.min(count * 0.4, 14),
+      fillColor: color, color: '#fff',
+      weight: 2.5, fillOpacity: 0.85,
+    }).addTo(map);
+
+    circle.bindTooltip(`${area}<br><b>${count} orgs</b>`, { direction:'top' });
+    circle.on('click', () => selectArea(area));
+    areaLayers[area] = circle;
+  });
+}
+
+function placeAreaChips() {
+  /* Remove old chips */
+  chipMarkers.forEach(m => map.removeLayer(m));
+  chipMarkers = [];
+
+  AREA_ORDER.forEach(area => {
+    const latlng = AREA_CENTROIDS[area];
+    const count = allOrgs.filter(o => o.area === area).length;
+    if (!latlng || count === 0) return;
+
+    const icon = L.divIcon({
+      className: '',
+      html: `<div class="area-chip">${area.split(' & ')[0]} <span style="opacity:.65">(${count})</span></div>`,
+      iconAnchor: [0, 0],
+    });
+
+    const m = L.marker(latlng, { icon, interactive: false, zIndexOffset:-100 }).addTo(map);
+    chipMarkers.push(m);
+  });
+}
+
+function highlightArea(area) {
+  Object.entries(areaLayers).forEach(([a, lyr]) => {
+    if (lyr.setStyle) {
+      lyr.setStyle({
+        fillOpacity: a === area ? 0.5 : 0.12,
+        weight: a === area ? 3 : 1.5,
+        opacity: a === area ? 1 : 0.4,
+      });
+    }
+  });
+
+  const ll = AREA_CENTROIDS[area];
+  if (ll) map.flyTo(ll, 14, { duration: 0.8 });
+}
+
+function resetMapHighlight() {
+  Object.values(areaLayers).forEach(lyr => {
+    if (lyr.setStyle) {
+      lyr.setStyle({ fillOpacity: 0.22, weight: 2, opacity: 0.7 });
+    }
+  });
+  map.flyTo([51.488, -0.082], 13, { duration: 0.7 });
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   DATA LOADING
+   ═══════════════════════════════════════════════════════════════════ */
+function loadData() {
+  setLoaderText('Connecting to Google Sheets…');
+
+  if (!SHEET_URL || SHEET_URL.includes('YOUR_GOOGLE')) {
+    document.getElementById('banner').style.display = 'flex';
+    loadDemo();
+    return;
+  }
+
+  Papa.parse(SHEET_URL, {
+    download: true,
+    header: true,
+    skipEmptyLines: true,
+    complete(results) { processRows(results.data); },
+    error()  { document.getElementById('banner').style.display = 'flex'; loadDemo(); },
+  });
+}
+
+function refreshData() {
+  allOrgs = []; filteredOrgs = [];
+  openCardId = null; selectedArea = null; searchQuery = '';
+  document.getElementById('searchInput').value = '';
+  document.getElementById('topPill').textContent = 'Refreshing…';
+  loadData();
+}
+
+function processRows(rows) {
+  allOrgs = rows
+    .filter(r => clean(r['Organisation Name']))
+    .map((r, i) => ({
+      id: i,
+      name:     clean(r['Organisation Name']),
+      contact:  clean(r['Contact Name']),
+      address:  clean(r['Address']),
+      phone:    clean(r['Phone']),
+      email:    clean(r['Email']),
+      website:  clean(r['Website']),
+      social:   clean(r['Social Media']),
+      type:     clean(r['Type / Category']),
+      area:     normaliseArea(clean(r['Ward / Area'])),
+      c1:       clean(r['1st Contact']),
+      c2:       clean(r['2nd Contact']),
+      followUp: clean(r['Follow Up']),
+      status:   clean(r['Status']) || inferStatus(r),
+      notes:    clean(r['Notes']),
+      outreach: clean(r['Outreach Notes']),
+    }));
+
+  filteredOrgs = [...allOrgs];
+  afterLoad();
+}
+
+function normaliseArea(raw) {
+  if (!raw) return 'Unspecified';
+  const map = {
+    'all': 'Southwark-Wide', 'southwark': 'Southwark-Wide',
+    'borough & bankside': 'Borough & Bankside',
+    'borough and bankside': 'Borough & Bankside',
+    'borough/bankside': 'Borough & Bankside',
+    'blackfriars': 'Borough & Bankside',
+    'southbank': 'Borough & Bankside',
+    'london bridge': 'Borough & Bankside',
+    'elephant & castle': 'Elephant & Castle',
+    'elephant and castle': 'Elephant & Castle',
+    'elephant & castle / southwark': 'Elephant & Castle',
+    'walworth': 'Elephant & Castle',
+    'kennington': 'Elephant & Castle',
+    'bermondsey': 'Bermondsey',
+    'bermondsey ': 'Bermondsey',
+    'bemondsey': 'Bermondsey',
+    'bermondsey/rotherhithe': 'Bermondsey',
+    'old kent road': 'Old Kent Road',
+    'old kent road/bermondsey': 'Old Kent Road',
+    'old kent rd': 'Old Kent Road',
+    'olд kent road': 'Old Kent Road',
+    'camberwell': 'Camberwell',
+    'champion hill': 'Camberwell',
+    'east dulwich': 'Camberwell',
+    'dulwich': 'Camberwell',
+    'hern hill': 'Camberwell',
+    'herne hill': 'Camberwell',
+    'nunhead': 'Camberwell',
+    'peckham': 'Peckham',
+    'peckham ': 'Peckham',
+    'peckham/wandsworth': 'Peckham',
+    'peckham/bermondsey': 'Peckham',
+    'ayelsham centre': 'Peckham',
+    'telegraph hill/new cross': 'Peckham',
+    'rotherhithe': 'Rotherhithe & Surrey Quays',
+    'surrey quays': 'Rotherhithe & Surrey Quays',
+    'canada water': 'Rotherhithe & Surrey Quays',
+  };
+  const key = raw.toLowerCase().replace(/\xa0/g,'').trim();
+  return map[key] || (AREA_ORDER.includes(raw) ? raw : 'Outside Southwark');
+}
+
+function inferStatus(r) {
+  const c1 = clean(r['1st Contact']), c2 = clean(r['2nd Contact']);
+  if (c2) return 'Contacted';
+  if (c1 && c1 !== '.') return 'Contacted';
+  return 'Not Contacted';
+}
+
+function clean(v) {
+  if (v === null || v === undefined) return '';
+  const s = String(v).trim();
+  return (s === 'nan' || s === 'undefined' || s === '\xa0') ? '' : s;
+}
+
+function afterLoad() {
+  document.getElementById('topPill').textContent = `${allOrgs.length} orgs`;
+  buildTabs();
+  applyFilters();
+  placeAreaChips();
+  hideLoader();
+}
+
+function loadDemo() {
+  allOrgs = [
+    {id:0,name:'Blackfriars Settlement',contact:'Liz Ranger',address:'1 Rushworth Street, London SE1 0RB',phone:'020 7928 9521',email:'info@blackfriars-settlement.org.uk',website:'blackfriars-settlement.org.uk',type:'Community Charity',area:'Borough & Bankside',status:'Contacted',c1:'Visited Oct 29',c2:'',notes:'Busy community hub',outreach:''},
+    {id:1,name:'Better Bankside',contact:'',address:'18 Great Guildford St, London SE1 0FD',phone:'0207 928 3998',email:'info@betterbankside.co.uk',website:'betterbankside.co.uk',type:'Non-Profit',area:'Borough & Bankside',status:'Contacted',c1:'Email Sep 2024',c2:'',notes:'',outreach:''},
+    {id:2,name:'London LGBTQ+ Community Centre',contact:'',address:'60-62 Hopton St, London SE1 9JH',phone:'7921103201',email:'hello@londonlgbtqcentre.org',website:'londonlgbtqcentre.org',type:'Community Centre',area:'Southwark-Wide',status:'Contacted',c1:'Email Sep 2024',c2:'',notes:'',outreach:''},
+    {id:3,name:'Southwark Refugee Communities Forum',contact:'',address:'81 Camberwell Church St, London SE5 8RB',phone:'0207 277 4400',email:'eltayeb.hassan@southwarkrcf.org.uk',website:'southwarkrefugeecommunitiesforum.org',type:'Refugee Support',area:'Southwark-Wide',status:'Not Contacted',c1:'',c2:'',notes:'',outreach:''},
+    {id:4,name:'Bermondsey Village Hall Trust',contact:'Christine',address:'Kirkby Grove, SE1 3TD',phone:'0207 378 1078',email:'bermondseyhall@aol.com',website:'',type:'Community Venue',area:'Bermondsey',status:'Not Contacted',c1:'',c2:'',notes:'',outreach:''},
+    {id:5,name:'One Hub Southwark',contact:'',address:'Virtual Organisation, Southwark',phone:'',email:'youthserviceinfo@southwark.gov.uk',website:'onehubsouthwark.co.uk',type:'Youth Services',area:'Southwark-Wide',status:'Contacted',c1:'11/12',c2:'18/12 - Email sent',notes:'Add SPF to website',outreach:''},
+    {id:6,name:'Southwark Leisure',contact:'',address:'All 8 leisure centres in the borough',phone:'',email:'SouthwarkLeisureInfo@southwark.gov.uk',website:'southwarkleisure.co.uk',type:'Leisure / Sports',area:'Southwark-Wide',status:'Contacted',c1:'11/12 - Contacted',c2:'',notes:'Screens at all venues',outreach:''},
+    {id:7,name:'The Leather Market',contact:'Kiran/Pamela',address:'Western Street, SE1 3ER',phone:'0203 514 3959',email:'team@firstofficehub.com',website:'workspace.co.uk',type:'Workspace',area:'Borough & Bankside',status:'Contacted',c1:'2024',c2:'',notes:'',outreach:''},
+  ];
+  filteredOrgs = [...allOrgs];
+  afterLoad();
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   AREA TABS
+   ═══════════════════════════════════════════════════════════════════ */
+function buildTabs() {
+  const el = document.getElementById('areaTabs');
+  el.innerHTML = '';
+
+  const all = mkTab(`All (${allOrgs.length})`, null);
+  el.appendChild(all);
+
+  AREA_ORDER.forEach(area => {
+    const cnt = allOrgs.filter(o => o.area === area).length;
+    if (!cnt) return;
+    const short = area.replace(' & Surrey Quays','').replace(' & Castle','').replace(' & Bankside','');
+    el.appendChild(mkTab(`${short} (${cnt})`, area));
+  });
+}
+
+function mkTab(label, area) {
+  const d = document.createElement('div');
+  d.className = 'atab' + (!area && !selectedArea ? ' active' : area === selectedArea ? ' active' : '');
+  d.textContent = label;
+  if (area) d.dataset.area = area;
+  d.onclick = () => selectArea(area);
+  return d;
+}
+
+function refreshTabs() {
+  document.querySelectorAll('.atab').forEach(t => {
+    const a = t.dataset.area || null;
+    t.classList.toggle('active', a === selectedArea);
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   SELECT AREA
+   ═══════════════════════════════════════════════════════════════════ */
+function selectArea(area) {
+  selectedArea = area;
+  refreshTabs();
+  applyFilters();
+  area ? highlightArea(area) : resetMapHighlight();
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   SEARCH
+   ═══════════════════════════════════════════════════════════════════ */
+function setupSearch() {
+  const inp = document.getElementById('searchInput');
+  const clr = document.getElementById('searchClear');
+  let t;
+
+  inp.addEventListener('input', () => {
+    clearTimeout(t);
+    t = setTimeout(() => {
+      searchQuery = inp.value.trim().toLowerCase();
+      clr.style.display = searchQuery ? 'flex' : 'none';
+      applyFilters();
+
+      /* Fly to first result's area */
+      if (searchQuery && filteredOrgs.length) {
+        const area = filteredOrgs[0].area;
+        if (AREA_CENTROIDS[area]) map.flyTo(AREA_CENTROIDS[area], 14, { duration:0.7 });
+      }
+    }, 180);
+  });
+
+  clr.addEventListener('click', () => {
+    inp.value = ''; searchQuery = '';
+    clr.style.display = 'none';
+    applyFilters();
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   FILTER & RENDER
+   ═══════════════════════════════════════════════════════════════════ */
+function applyFilters() {
+  const q = searchQuery;
+  filteredOrgs = allOrgs.filter(o => {
+    const aOk = !selectedArea || o.area === selectedArea;
+    const sOk = !q ||
+      o.name.toLowerCase().includes(q) ||
+      o.type.toLowerCase().includes(q) ||
+      o.address.toLowerCase().includes(q) ||
+      o.contact.toLowerCase().includes(q) ||
+      o.area.toLowerCase().includes(q);
+    return aOk && sOk;
+  });
+
+  renderList();
+
+  const hd = document.getElementById('listHead');
+  if (selectedArea && q)
+    hd.textContent = `${filteredOrgs.length} results in ${selectedArea}`;
+  else if (selectedArea)
+    hd.textContent = `${filteredOrgs.length} orgs — ${selectedArea}`;
+  else if (q)
+    hd.textContent = `${filteredOrgs.length} results for "${q}"`;
+  else
+    hd.textContent = `All organisations (${filteredOrgs.length})`;
+}
+
+function renderList() {
+  const list = document.getElementById('orgList');
+  list.innerHTML = '';
+
+  if (!filteredOrgs.length) {
+    list.innerHTML = `<div class="empty">
+      <div class="empty-ico">🔍</div>
+      <div class="empty-msg">No organisations found</div>
+      <div class="empty-sub">Try a different search or area filter</div>
+    </div>`;
+    return;
+  }
+
+  filteredOrgs.forEach((org, i) => {
+    const card = buildCard(org, i);
+    list.appendChild(card);
+  });
+}
+
+function buildCard(org, idx) {
+  const div = document.createElement('div');
+  div.className = 'ocard' + (openCardId === org.id ? ' open' : '');
+  div.dataset.id = org.id;
+  div.style.animationDelay = `${idx * 18}ms`;
+
+  const shortType = org.type.length > 28 ? org.type.slice(0,26) + '…' : org.type;
+  const sc = statusClass(org.status);
+
+  let details = '';
+  if (org.contact) details += row('👤', esc(org.contact));
+  if (org.address) details += row('📍', esc(org.address));
+  if (org.phone)   details += row('📞', `<a href="tel:${esc(org.phone)}">${esc(org.phone)}</a>`);
+  if (org.email)   details += row('✉️', `<a href="mailto:${esc(org.email)}">${esc(org.email)}</a>`);
+  if (org.website) details += row('🌐', `<a href="${fmtUrl(org.website)}" target="_blank" rel="noopener">${esc(org.website)}</a>`);
+  details += row('⚡', `<span class="sbadge ${sc}">${esc(org.status||'Unknown')}</span>`);
+  if (org.c1)       details += row('1️⃣', esc(org.c1));
+  if (org.c2)       details += row('2️⃣', esc(org.c2));
+  if (org.followUp) details += row('🔁', esc(org.followUp));
+
+  const noteText = org.outreach || org.notes;
+  const note = noteText ? `<div class="notes-block">📝 ${esc(noteText)}</div>` : '';
+
+  div.innerHTML = `
+    <div class="ocard-top">
+      <div class="ocard-name">${esc(org.name)}</div>
+      ${org.type ? `<div class="type-tag" title="${esc(org.type)}">${esc(shortType)}</div>` : ''}
+    </div>
+    <div class="ocard-area">📌 ${esc(org.area)}</div>
+    <div class="ocard-body">
+      ${details}
+      ${note}
+    </div>`;
+
+  div.addEventListener('click', () => {
+    const isOpen = div.classList.contains('open');
+    document.querySelectorAll('.ocard.open').forEach(c => c.classList.remove('open'));
+    if (!isOpen) {
+      div.classList.add('open');
+      openCardId = org.id;
+      setTimeout(() => div.scrollIntoView({ behavior:'smooth', block:'nearest' }), 60);
+    } else {
+      openCardId = null;
+    }
+  });
+
+  return div;
+}
+
+function row(icon, val) {
+  return `<div class="detail-row"><span class="d-ico">${icon}</span><span class="d-val">${val}</span></div>`;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   HELPERS
+   ═══════════════════════════════════════════════════════════════════ */
+function statusClass(s) {
+  if (!s) return 's-none';
+  const l = s.toLowerCase();
+  if (l.includes('partner')) return 's-partnership';
+  if (l.includes('visit'))   return 's-visited';
+  if (l.includes('contact')) return 's-contacted';
+  if (l.includes('pending')) return 's-pending';
+  return 's-none';
+}
+
+function fmtUrl(u) {
+  if (!u) return '#';
+  return u.startsWith('http') ? u : 'https://' + u;
+}
+
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function setLoaderText(t) {
+  document.getElementById('loaderSub').textContent = t;
+}
+
+function hideLoader() {
+  const l = document.getElementById('loader');
+  l.style.opacity = '0';
+  setTimeout(() => l.remove(), 450);
+}
+</script>
+</body>
+</html>
